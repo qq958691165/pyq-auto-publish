@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>朋友圈自动发布系统 - 管理后台</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ant-design-vue@4/dist/reset.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ant-design-vue@4/dist/antd.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ant-design-vue@4/dist/reset.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f0f2f5;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 侧边栏样式 - 清爽白色风格 */
+        .sidebar {
+            width: 256px;
+            background: white;
+            border-right: 1px solid #e8e8e8;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #0052CC;
+            background: white;
+            border-bottom: 1px solid #e8e8e8;
+        }
+
+        .menu {
+            flex: 1;
+            padding: 16px 0;
+        }
+
+        .menu-item {
+            padding: 12px 24px;
+            margin: 4px 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #666;
+            border-radius: 8px;
+        }
+
+        .menu-item:hover {
+            background: #E6F4FF;
+            color: #0052CC;
+        }
+
+        .menu-item.active {
+            background: #0052CC;
+            color: white;
+        }
+
+        .menu-icon {
+            font-size: 18px;
+        }
+
+        /* 分级菜单样式 */
+        .menu-group {
+            margin: 4px 0;
+        }
+
+        .menu-group-title {
+            padding: 12px 24px;
+            margin: 4px 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #666;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .menu-group-title:hover {
+            background: #E6F4FF;
+            color: #0052CC;
+        }
+
+        .menu-group-title.active {
+            background: #E6F4FF;
+            color: #0052CC;
+        }
+
+        .menu-group-icon {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-arrow {
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+
+        .menu-arrow.expanded {
+            transform: rotate(90deg);
+        }
+
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .submenu.expanded {
+            max-height: 500px;
+        }
+
+        .submenu-item {
+            padding: 10px 24px 10px 56px;
+            margin: 2px 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .submenu-item:hover {
+            background: #E6F4FF;
+            color: #0052CC;
+        }
+
+        .submenu-item.active {
+            background: #0052CC;
+            color: white;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            height: 64px;
+            background: white;
+            box-shadow: 0 1px 4px rgba(0,21,41,.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #0052CC;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        /* 内容区域 */
+        .content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        /* 统计卡片 - 清爽蓝色风格 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #E6F4FF 0%, #ffffff 100%);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,82,204,0.08);
+            border: 1px solid #E6F4FF;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #0052CC;
+        }
+
+        .stat-trend {
+            font-size: 12px;
+            color: #0052CC;
+            margin-top: 8px;
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #0052CC;
+            box-shadow: 0 0 0 2px rgba(0, 82, 204, 0.2);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* 图片编辑器样式 */
+        .image-editor {
+            margin-top: 20px;
+        }
+
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .image-item {
+            position: relative;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f9f9f9;
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .image-controls {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .image-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .image-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .image-order {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .add-image-btn {
+            width: 100%;
+            height: 150px;
+            border: 2px dashed #d0d0d0;
+            border-radius: 8px;
+            background: #f9f9f9;
+            color: #999;
+            cursor: pointer;
+            font-size: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .add-image-btn:hover {
+            border-color: #0052CC;
+            color: #0052CC;
+            background: #f0f7ff;
+        }
+
+        /* 按钮样式 - 深蓝色主题 */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: #0052CC;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0065FF;
+            box-shadow: 0 4px 12px rgba(0,82,204,0.3);
+        }
+
+        .btn-success {
+            background: #0052CC;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #0065FF;
+            box-shadow: 0 4px 12px rgba(0,82,204,0.3);
+        }
+
+        .btn-danger {
+            background: #ff4d4f;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ff7875;
+        }
+
+        /* 表格样式 */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .table th {
+            background: #fafafa;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .table tr:hover {
+            background: #fafafa;
+        }
+
+        /* 标签样式 */
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .tag-success {
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+
+        .tag-warning {
+            background: #fffbe6;
+            color: #faad14;
+            border: 1px solid #ffe58f;
+        }
+
+        .tag-danger {
+            background: #fff2f0;
+            color: #ff4d4f;
+            border: 1px solid #ffccc7;
+        }
+
+        .tag-info {
+            background: #E6F4FF;
+            color: #0052CC;
+            border: 1px solid #91d5ff;
+        }
+
+        /* 图片预览 */
+        .image-preview {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .image-item {
+            width: 100px;
+            height: 100px;
+            border-radius: 4px;
+            object-fit: cover;
+            border: 1px solid #d9d9d9;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 0;
+            color: #999;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        /* iframe容器样式 - 无缝集成 */
+        .iframe-container {
+            width: 100%;
+            height: calc(100vh - 64px);  /* 减去顶部导航栏高度 */
+            border: none;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+            background: #f0f2f5;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="app-container">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="logo">
+                🚀 朋友圈发布系统
+            </div>
+            <div class="menu">
+                <!-- 自动模式 -->
+                <div class="menu-item" :class="{active: currentPage === 'auto-workflow'}" @click="currentPage = 'auto-workflow'">
+                    <span>自动模式</span>
+                </div>
+
+                <!-- 手动模式 -->
+                <div class="menu-group">
+                    <div class="menu-group-title" :class="{active: menuGroups.manual}" @click="toggleMenuGroup('manual')">
+                        <div class="menu-group-icon">
+                            <span>手动模式</span>
+                        </div>
+                        <span class="menu-arrow" :class="{expanded: menuGroups.manual}">▶</span>
+                    </div>
+                    <div class="submenu" :class="{expanded: menuGroups.manual}">
+                        <div class="submenu-item" :class="{active: currentPage === 'collection'}" @click="currentPage = 'collection'">
+                            <span>公众号提取</span>
+                        </div>
+                        <div class="submenu-item" :class="{active: currentPage === 'rewrite'}" @click="currentPage = 'rewrite'">
+                            <span>文案转写</span>
+                        </div>
+                        <div class="submenu-item" :class="{active: currentPage === 'publish'}" @click="currentPage = 'publish'">
+                            <span>自动发布</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 公众号监控 -->
+                <div class="menu-item" :class="{active: currentPage === 'wechat-monitor'}" @click="currentPage = 'wechat-monitor'">
+                    <span>公众号监控</span>
+                </div>
+
+                <!-- 仪表盘 -->
+                <div class="menu-item" :class="{active: currentPage === 'dashboard'}" @click="currentPage = 'dashboard'">
+                    <span>仪表盘</span>
+                </div>
+
+                <!-- 堆雪球账号设置 -->
+                <div class="menu-item" :class="{active: currentPage === 'accounts'}" @click="currentPage = 'accounts'">
+                    <span>堆雪球账号设置</span>
+                </div>
+
+                <!-- API配置 -->
+                <div class="menu-group">
+                    <div class="menu-group-title" :class="{active: menuGroups.api}" @click="toggleMenuGroup('api')">
+                        <div class="menu-group-icon">
+                            <span>API配置</span>
+                        </div>
+                        <span class="menu-arrow" :class="{expanded: menuGroups.api}">▶</span>
+                    </div>
+                    <div class="submenu" :class="{expanded: menuGroups.api}">
+                        <div class="submenu-item" :class="{active: currentPage === 'coze-config'}" @click="currentPage = 'coze-config'">
+                            <span>Coze配置</span>
+                        </div>
+                        <div class="submenu-item" :class="{active: currentPage === 'feishu-config'}" @click="currentPage = 'feishu-config'">
+                            <span>飞书多维表格</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <!-- 顶部导航栏 -->
+            <div class="header">
+                <div class="header-title">{{ pageTitle }}</div>
+                <div class="user-info">
+                    <span>{{ userName }}</span>
+                    <div class="avatar">{{ userAvatar }}</div>
+                    <button class="btn btn-logout" @click="handleLogout" style="margin-left: 12px; padding: 6px 12px; background: #ff4d4f; color: white; border: none; border-radius: 4px; cursor: pointer;">退出登录</button>
+                </div>
+            </div>
+
+            <!-- 内容区域 -->
+            <div class="content">
+                <!-- 仪表盘页面 -->
+                <div class="page" :class="{active: currentPage === 'dashboard'}">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">今日采集</div>
+                            <div class="stat-value">23</div>
+                            <div class="stat-trend">↑ 12% 较昨日</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">今日改写</div>
+                            <div class="stat-value">18</div>
+                            <div class="stat-trend">↑ 8% 较昨日</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">今日发布</div>
+                            <div class="stat-value">15</div>
+                            <div class="stat-trend">↑ 15% 较昨日</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">活跃账号</div>
+                            <div class="stat-value">8</div>
+                            <div class="stat-trend">共10个账号</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">最近发布记录</div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>文案内容</th>
+                                    <th>发布账号</th>
+                                    <th>发布时间</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>今天天气真好，适合发朋友圈！</td>
+                                    <td>微信号1</td>
+                                    <td>2025-10-22 14:30</td>
+                                    <td><span class="tag tag-success">已发布</span></td>
+                                </tr>
+                                <tr>
+                                    <td>分享一篇好文章给大家</td>
+                                    <td>微信号2</td>
+                                    <td>2025-10-22 13:15</td>
+                                    <td><span class="tag tag-success">已发布</span></td>
+                                </tr>
+                                <tr>
+                                    <td>周末愉快！</td>
+                                    <td>微信号3</td>
+                                    <td>2025-10-22 10:00</td>
+                                    <td><span class="tag tag-warning">待发布</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 自动模式 - 一键发布页面 -->
+                <div class="page" :class="{active: currentPage === 'auto-workflow'}">
+                    <div class="card">
+                        <div class="card-title">自动模式 - 一键发布</div>
+                        <div class="form-group">
+                            <label class="form-label">公众号链接</label>
+                            <input type="text" class="form-input" placeholder="请输入公众号文章链接" v-model="autoForm.url">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">选择微信账号</label>
+                            <select class="form-input" v-model="autoForm.account">
+                                <option value="">请选择微信账号</option>
+                                <option value="wx1">微信号1</option>
+                                <option value="wx2">微信号2</option>
+                                <option value="wx3">微信号3</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">发布时间</label>
+                            <input type="datetime-local" class="form-input" v-model="autoForm.time">
+                        </div>
+                        <button class="btn btn-primary" @click="startAutoWorkflow">一键发布</button>
+                        <p style="margin-top: 12px; color: #666; font-size: 14px;">
+                            系统将自动完成：采集文章 → AI转写 → 上传素材 → 定时发布
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 公众号采集页面 -->
+                <div class="page" :class="{active: currentPage === 'collection'}">
+                    <div class="card">
+                        <div class="card-title">采集公众号文章</div>
+                        <div class="form-group">
+                            <label class="form-label">公众号文章链接</label>
+                            <input type="text" class="form-input" v-model="collectionForm.url" placeholder="请输入公众号文章链接">
+                        </div>
+                        <button class="btn btn-primary" @click="startCollection">开始采集</button>
+                    </div>
+
+                    <div class="card" v-if="collectionResult">
+                        <div class="card-title">采集结果</div>
+                        <div class="form-group">
+                            <label class="form-label">文章标题</label>
+                            <div>{{ collectionResult.title }}</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">文章内容</label>
+                            <div>{{ collectionResult.content }}</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">文章图片</label>
+                            <div class="image-preview">
+                                <img v-for="img in collectionResult.images" :src="img" class="image-item">
+                            </div>
+                        </div>
+                        <button class="btn btn-success" @click="goToRewrite">去改写</button>
+                    </div>
+                </div>
+
+                <!-- 文案改写页面 -->
+                <div class="page" :class="{active: currentPage === 'rewrite'}">
+                    <div class="card">
+                        <div class="card-title">AI智能改写</div>
+                        <div class="form-group">
+                            <label class="form-label">原始文案</label>
+                            <textarea class="form-input form-textarea" v-model="rewriteForm.original" placeholder="请输入需要改写的文案"></textarea>
+                        </div>
+
+                        <!-- 图片编辑器 -->
+                        <div class="image-editor" v-if="rewriteForm.selectedImages.length > 0 || rewriteForm.images.length > 0">
+                            <label class="form-label">文章图片 (可删除、排序、添加)</label>
+                            <div class="image-gallery">
+                                <!-- 已选择的图片 -->
+                                <div v-for="(image, index) in rewriteForm.selectedImages" :key="index" class="image-item">
+                                    <img :src="image" :alt="'图片' + (index + 1)">
+                                    <div class="image-controls">
+                                        <button class="image-btn" @click="moveImageUp(index)" :disabled="index === 0" title="上移">↑</button>
+                                        <button class="image-btn" @click="moveImageDown(index)" :disabled="index === rewriteForm.selectedImages.length - 1" title="下移">↓</button>
+                                        <button class="image-btn" @click="removeImage(index)" title="删除">×</button>
+                                    </div>
+                                    <div class="image-order">{{ index + 1 }}</div>
+                                </div>
+                                <!-- 添加新图片按钮 -->
+                                <div class="add-image-btn" @click="showAddImageMenu" title="添加图片">
+                                    +
+                                </div>
+                            </div>
+                            <!-- 隐藏的文件上传输入框 -->
+                            <input type="file" ref="imageUpload" @change="handleImageUpload" accept="image/*" style="display: none;">
+                        </div>
+
+                        <button class="btn btn-primary" @click="startRewrite" style="margin-top: 20px;">开始改写</button>
+                    </div>
+
+                    <div class="card" v-if="rewriteResult">
+                        <div class="card-title">改写结果</div>
+                        <div class="form-group">
+                            <label class="form-label">改写版本1</label>
+                            <textarea v-model="rewriteResult.version1" rows="4" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">改写版本2</label>
+                            <textarea v-model="rewriteResult.version2" rows="4" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">改写版本3</label>
+                            <textarea v-model="rewriteResult.version3" rows="4" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-success" @click="goToPublish(1)">使用版本1发布</button>
+                            <button class="btn btn-success" @click="goToPublish(2)">使用版本2发布</button>
+                            <button class="btn btn-success" @click="goToPublish(3)">使用版本3发布</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 发布管理页面 -->
+                <div class="page" :class="{active: currentPage === 'publish'}">
+                    <div class="card">
+                        <div class="card-title">创建发布任务</div>
+                        <div class="form-group">
+                            <label class="form-label">文案内容</label>
+                            <textarea class="form-input form-textarea" v-model="publishForm.content" placeholder="请输入要发布的文案"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">选择微信账号</label>
+                            <select class="form-input" v-model="publishForm.account">
+                                <option value="">请选择账号</option>
+                                <option value="1">微信号1</option>
+                                <option value="2">微信号2</option>
+                                <option value="3">微信号3</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">发布时间</label>
+                            <input type="datetime-local" class="form-input" v-model="publishForm.time">
+                        </div>
+                        <button class="btn btn-primary" @click="createPublishTask">创建任务</button>
+                    </div>
+                </div>
+
+                <!-- 微信账号页面 -->
+                <div class="page" :class="{active: currentPage === 'accounts'}">
+                    <div class="card">
+                        <div class="card-title">微信账号列表</div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>账号名称</th>
+                                    <th>微信ID</th>
+                                    <th>状态</th>
+                                    <th>最后发布</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>微信号1</td>
+                                    <td>wxid_123456</td>
+                                    <td><span class="tag tag-success">正常</span></td>
+                                    <td>2025-10-22 14:30</td>
+                                    <td><button class="btn btn-primary">编辑</button></td>
+                                </tr>
+                                <tr>
+                                    <td>微信号2</td>
+                                    <td>wxid_789012</td>
+                                    <td><span class="tag tag-success">正常</span></td>
+                                    <td>2025-10-22 13:15</td>
+                                    <td><button class="btn btn-primary">编辑</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Coze配置页面 -->
+                <div class="page" :class="{active: currentPage === 'coze-config'}">
+                    <div class="card">
+                        <div class="card-title">Coze API配置</div>
+                        <div class="form-group">
+                            <label class="form-label">Coze API Token</label>
+                            <input type="text" class="form-input" placeholder="请输入Coze API Token" v-model="cozeConfig.token">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">采集工作流ID</label>
+                            <input type="text" class="form-input" placeholder="请输入公众号采集工作流ID" v-model="cozeConfig.collectionWorkflowId">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">转写工作流ID</label>
+                            <input type="text" class="form-input" placeholder="请输入文案转写工作流ID" v-model="cozeConfig.rewriteWorkflowId">
+                        </div>
+                        <button class="btn btn-primary" @click="saveCozeConfig">保存配置</button>
+                    </div>
+                </div>
+
+                <!-- 飞书多维表格配置页面 -->
+                <div class="page" :class="{active: currentPage === 'feishu-config'}">
+                    <div class="card">
+                        <div class="card-title">飞书多维表格配置</div>
+                        <div class="form-group">
+                            <label class="form-label">飞书应用ID (App ID)</label>
+                            <input type="text" class="form-input" placeholder="请输入飞书应用ID" v-model="feishuConfig.appId">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">飞书应用密钥 (App Secret)</label>
+                            <input type="password" class="form-input" placeholder="请输入飞书应用密钥" v-model="feishuConfig.appSecret">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">多维表格ID</label>
+                            <input type="text" class="form-input" placeholder="请输入多维表格ID" v-model="feishuConfig.tableId">
+                        </div>
+                        <button class="btn btn-primary" @click="saveFeishuConfig">保存配置</button>
+                    </div>
+                </div>
+
+                <!-- 公众号监控页面 - iframe嵌入 -->
+                <div class="page" :class="{active: currentPage === 'wechat-monitor'}">
+                    <div class="iframe-container">
+                        <iframe src="wechat-subscription.html" frameborder="0"></iframe>
+                    </div>
+                </div>
+
+                <!-- 系统设置页面 -->
+                <div class="page" :class="{active: currentPage === 'settings'}">
+                    <div class="card">
+                        <div class="card-title">系统配置</div>
+                        <div class="form-group">
+                            <label class="form-label">Coze API密钥</label>
+                            <input type="text" class="form-input" placeholder="请输入Coze API密钥">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">飞书应用ID</label>
+                            <input type="text" class="form-input" placeholder="请输入飞书应用ID">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">堆雪球账号</label>
+                            <input type="text" class="form-input" placeholder="请输入堆雪球账号">
+                        </div>
+                        <button class="btn btn-primary">保存设置</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentPage: 'auto-workflow',
+                    userName: '刀仔老板',
+                    userAvatar: '刀',
+                    menuGroups: {
+                        auto: false,
+                        manual: false,
+                        api: false
+                    },
+                    collectionForm: {
+                        url: ''
+                    },
+                    collectionResult: null,
+                    rewriteForm: {
+                        articleId: null,
+                        original: '',
+                        images: [],  // 原始图片列表
+                        selectedImages: []  // 用户选择的图片列表
+                    },
+                    rewriteResult: null,
+                    publishForm: {
+                        content: '',
+                        account: '',
+                        time: ''
+                    },
+                    autoForm: {
+                        url: '',
+                        account: '',
+                        time: ''
+                    },
+                    cozeConfig: {
+                        token: '',
+                        collectionWorkflowId: '',
+                        rewriteWorkflowId: ''
+                    },
+                    feishuConfig: {
+                        appId: '',
+                        appSecret: '',
+                        tableId: ''
+                    },
+                    // 公众号监控相关数据
+                    wechatMonitor: {
+                        activeTab: 'articles',
+                        loading: false,
+                        subscriptions: [],
+                        articles: [],
+                        selectedMp: null,
+                        totalArticles: 0,
+                        allArticlesCount: 0,
+                        qrCodeUrl: '',
+                        qrStatus: '点击按钮获取二维码',
+                        qrCheckInterval: null,
+                        searchKeyword: '',
+                        searchResults: [],
+                        selectedMpData: null,
+                        newSubscription: {
+                            name: '',
+                            mp_id: '',
+                            description: ''
+                        },
+                        syncInterval: 30,
+                        showArticleModal: false,
+                        currentArticle: null
+                    },
+                    apiBaseUrl: 'http://localhost:3000/api',
+                    rssApiUrl: 'http://localhost:8001/api/v1/wx'
+                }
+            },
+            computed: {
+                pageTitle() {
+                    const titles = {
+                        dashboard: '仪表盘',
+                        'auto-workflow': '自动模式 - 一键发布',
+                        'wechat-monitor': '公众号监控',
+                        collection: '手动模式 - 公众号提取',
+                        rewrite: '手动模式 - 文案转写',
+                        publish: '手动模式 - 自动发布',
+                        accounts: '堆雪球账号设置',
+                        'coze-config': 'API配置 - Coze',
+                        'feishu-config': 'API配置 - 飞书多维表格',
+                        settings: '系统设置'
+                    };
+                    return titles[this.currentPage] || '朋友圈发布系统';
+                }
+            },
+            methods: {
+                toggleMenuGroup(groupName) {
+                    this.menuGroups[groupName] = !this.menuGroups[groupName];
+                },
+                startCollection() {
+                    // 模拟采集结果
+                    this.collectionResult = {
+                        title: '这是一篇公众号文章标题',
+                        content: '这是文章的内容摘要...',
+                        images: [
+                            'https://via.placeholder.com/100',
+                            'https://via.placeholder.com/100'
+                        ]
+                    };
+                },
+                goToRewrite() {
+                    this.currentPage = 'rewrite';
+                    this.rewriteForm.original = this.collectionResult.content;
+                },
+                async startRewrite() {
+                    if (!this.rewriteForm.original) {
+                        alert('请先输入需要改写的文案');
+                        return;
+                    }
+
+                    try {
+                        // 显示加载状态
+                        this.rewriteResult = {
+                            version1: '正在调用Coze AI生成版本1...',
+                            version2: '正在调用Coze AI生成版本2...',
+                            version3: '正在调用Coze AI生成版本3...'
+                        };
+
+                        const response = await fetch(`${this.apiBaseUrl}/coze/rewrite`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            },
+                            body: JSON.stringify({
+                                content: this.rewriteForm.original,
+                                images: this.rewriteForm.selectedImages,
+                                articleId: this.rewriteForm.articleId
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.rewriteResult = {
+                                version1: data.data.version1,
+                                version2: data.data.version2,
+                                version3: data.data.version3
+                            };
+                            alert('转写成功!已生成3个版本的文案,您可以编辑后选择使用!');
+                        } else {
+                            alert('转写失败: ' + (data.message || '未知错误'));
+                            this.rewriteResult = {
+                                version1: '',
+                                version2: '',
+                                version3: ''
+                            };
+                        }
+                    } catch (error) {
+                        console.error('转写失败:', error);
+                        alert('转写失败: ' + error.message);
+                        this.rewriteResult = {
+                            version1: '',
+                            version2: '',
+                            version3: ''
+                        };
+                    }
+                },
+                goToPublish(version = 1) {
+                    this.currentPage = 'publish';
+                    // 根据选择的版本设置发布内容
+                    if (version === 1) {
+                        this.publishForm.content = this.rewriteResult.version1;
+                    } else if (version === 2) {
+                        this.publishForm.content = this.rewriteResult.version2;
+                    } else if (version === 3) {
+                        this.publishForm.content = this.rewriteResult.version3;
+                    }
+                    // 同时设置图片
+                    this.publishForm.images = this.rewriteForm.selectedImages || [];
+                },
+                createPublishTask() {
+                    alert('发布任务创建成功！');
+                },
+                handleLogout() {
+                    if (confirm('确定要退出登录吗?')) {
+                        // 清除登录信息
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        // 跳转到登录页面
+                        window.location.href = 'login.html';
+                    }
+                },
+                startAutoWorkflow() {
+                    if (!this.autoForm.url) {
+                        alert('请输入公众号链接');
+                        return;
+                    }
+                    if (!this.autoForm.account) {
+                        alert('请选择微信账号');
+                        return;
+                    }
+                    if (!this.autoForm.time) {
+                        alert('请选择发布时间');
+                        return;
+                    }
+                    alert('一键发布任务已创建！系统将自动完成采集、转写、上传、发布流程。');
+                },
+                saveCozeConfig() {
+                    // TODO: 调用后端API保存配置
+                    alert('Coze配置保存成功！');
+                },
+                saveFeishuConfig() {
+                    // TODO: 调用后端API保存配置
+                    alert('飞书配置保存成功！');
+                },
+                // 公众号监控相关方法
+                async searchWechatAccount() {
+                    if (!this.wechatMonitor.searchKeyword) {
+                        alert('请输入公众号名称');
+                        return;
+                    }
+
+                    try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch(`http://localhost:3000/api/wechat-monitor/search?keyword=${encodeURIComponent(this.wechatMonitor.searchKeyword)}`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.wechatMonitor.searchResults = data;
+                            if (data.length === 0) {
+                                alert('未找到相关公众号');
+                            }
+                        } else {
+                            alert('搜索失败！');
+                        }
+                    } catch (error) {
+                        console.error('搜索失败:', error);
+                        alert('搜索失败！');
+                    }
+                },
+                async selectAccount(account) {
+                    if (!confirm(`确定要订阅"${account.mp_name}"吗？`)) {
+                        return;
+                    }
+
+                    try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch('http://localhost:3000/api/wechat-monitor/subscriptions', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                mp_name: account.mp_name,
+                                mp_id: account.mp_id,
+                                mp_cover: account.mp_cover,
+                                avatar: account.avatar,
+                                mp_intro: account.mp_intro
+                            })
+                        });
+
+                        if (response.ok) {
+                            alert('添加订阅成功！');
+                            this.wechatMonitor.searchKeyword = '';
+                            this.wechatMonitor.searchResults = [];
+                            this.loadSubscriptions();
+                        } else {
+                            alert('添加订阅失败！');
+                        }
+                    } catch (error) {
+                        console.error('添加订阅失败:', error);
+                        alert('添加订阅失败！');
+                    }
+                },
+                async loadSubscriptions() {
+                    try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch('http://localhost:3000/api/wechat-monitor/subscriptions', {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.wechatMonitor.subscriptions = data;
+                        }
+                    } catch (error) {
+                        console.error('加载订阅列表失败:', error);
+                    }
+                },
+                async deleteSubscription(id) {
+                    if (!confirm('确定要删除这个订阅吗？')) {
+                        return;
+                    }
+
+                    try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch(`http://localhost:3000/api/wechat-monitor/subscriptions/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        if (response.ok) {
+                            alert('删除成功！');
+                            this.loadSubscriptions();
+                        } else {
+                            alert('删除失败！');
+                        }
+                    } catch (error) {
+                        console.error('删除订阅失败:', error);
+                        alert('删除失败！');
+                    }
+                },
+                async triggerUpdate(id) {
+                    try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch(`http://localhost:3000/api/wechat-monitor/subscriptions/${id}/update`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        if (response.ok) {
+                            alert('更新成功！');
+                            this.loadSubscriptions();
+                        } else {
+                            alert('更新失败！');
+                        }
+                    } catch (error) {
+                        console.error('触发更新失败:', error);
+                        alert('更新失败！');
+                    }
+                },
+                async loadArticles() {
+                    try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch('http://localhost:3000/api/wechat-monitor/articles', {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.wechatMonitor.articles = data;
+                        }
+                    } catch (error) {
+                        console.error('加载文章列表失败:', error);
+                    }
+                },
+                viewArticle(id) {
+                    alert(`查看文章详情: ${id}`);
+                },
+                openWechatMonitor() {
+                    // 跳转到新的公众号监控页面
+                    window.location.href = 'wechat-subscription.html';
+                },
+                openArticles() {
+                    // 跳转到文章管理页面
+                    window.location.href = 'articles.html';
+                },
+                openMonitorConfig() {
+                    // 跳转到监控配置页面
+                    window.location.href = 'monitor-config.html';
+                },
+                // 处理来自iframe的消息
+                handleMessage(event) {
+                    // 安全检查:确保消息来自可信源
+                    // 在生产环境中应该检查event.origin
+
+                    if (event.data && event.data.action === 'goToRewrite') {
+                        // 从localStorage获取转写数据
+                        const rewriteData = JSON.parse(localStorage.getItem('rewriteData') || '{}');
+
+                        if (rewriteData.content) {
+                            // 填充转写表单
+                            this.rewriteForm.articleId = rewriteData.articleId;
+                            this.rewriteForm.original = rewriteData.content;
+                            this.rewriteForm.images = rewriteData.images || [];
+                            this.rewriteForm.selectedImages = [...(rewriteData.images || [])];  // 默认选中所有图片
+
+                            // 切换到转写页面
+                            this.currentPage = 'rewrite';
+                            this.menuGroups.manual = true;  // 展开手动模式菜单
+                        }
+                    }
+                },
+                // 删除图片
+                removeImage(index) {
+                    this.rewriteForm.selectedImages.splice(index, 1);
+                },
+                // 上移图片
+                moveImageUp(index) {
+                    if (index > 0) {
+                        const temp = this.rewriteForm.selectedImages[index];
+                        this.rewriteForm.selectedImages[index] = this.rewriteForm.selectedImages[index - 1];
+                        this.rewriteForm.selectedImages[index - 1] = temp;
+                    }
+                },
+                // 下移图片
+                moveImageDown(index) {
+                    if (index < this.rewriteForm.selectedImages.length - 1) {
+                        const temp = this.rewriteForm.selectedImages[index];
+                        this.rewriteForm.selectedImages[index] = this.rewriteForm.selectedImages[index + 1];
+                        this.rewriteForm.selectedImages[index + 1] = temp;
+                    }
+                },
+                // 显示添加图片菜单
+                showAddImageMenu() {
+                    const choice = confirm('点击"确定"上传本地图片\n点击"取消"输入图片URL');
+                    if (choice) {
+                        // 上传本地图片
+                        this.triggerImageUpload();
+                    } else {
+                        // 输入URL
+                        this.addImageUrl();
+                    }
+                },
+                // 触发文件上传
+                triggerImageUpload() {
+                    this.$refs.imageUpload.click();
+                },
+                // 处理图片上传
+                handleImageUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    // 检查文件类型
+                    if (!file.type.startsWith('image/')) {
+                        alert('请选择图片文件!');
+                        return;
+                    }
+
+                    // 检查文件大小(限制5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('图片大小不能超过5MB!');
+                        return;
+                    }
+
+                    // 使用FileReader读取图片并转换为Base64
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        // 添加Base64图片到列表
+                        this.rewriteForm.selectedImages.push(e.target.result);
+                    };
+                    reader.onerror = () => {
+                        alert('图片读取失败,请重试!');
+                    };
+                    reader.readAsDataURL(file);
+
+                    // 清空input,允许重复选择同一文件
+                    event.target.value = '';
+                },
+                // 添加图片URL(保留此方法,可以通过其他方式调用)
+                addImageUrl() {
+                    const url = prompt('请输入图片URL:');
+                    if (url && url.trim()) {
+                        this.rewriteForm.selectedImages.push(url.trim());
+                    }
+                }
+            },
+            mounted() {
+                // 检查登录状态
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    // 未登录,跳转到登录页面
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // 获取用户信息
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                if (user.name) {
+                    this.userName = user.name;
+                    this.userAvatar = user.name.charAt(0);
+                }
+
+                // 加载公众号监控数据
+                this.loadSubscriptions();
+                this.loadArticles();
+
+                // 监听来自iframe的消息
+                window.addEventListener('message', this.handleMessage);
+            },
+            beforeUnmount() {
+                // 移除消息监听器
+                window.removeEventListener('message', this.handleMessage);
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

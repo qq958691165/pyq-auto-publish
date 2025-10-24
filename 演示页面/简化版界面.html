@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>朋友圈AI管理系统 - 演示版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        .sidebar-active {
+            background-color: #f3f4f6;
+            border-right: 3px solid #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- 侧边栏 -->
+        <div class="w-64 bg-white shadow-lg">
+            <!-- Logo区域 -->
+            <div class="p-6 border-b">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <i data-lucide="bot" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg">朋友圈AI管理</h1>
+                        <p class="text-sm text-gray-500">智能内容管理系统</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主要功能菜单 -->
+            <div class="p-4">
+                <h3 class="text-sm font-medium text-gray-500 mb-3">主要功能</h3>
+                <nav class="space-y-2">
+                    <button onclick="showTab('collection')" id="tab-collection" class="sidebar-active w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-gray-100 transition-colors">
+                        <i data-lucide="download" class="w-5 h-5"></i>
+                        <span>AI采集</span>
+                    </button>
+                    <button onclick="showTab('rewrite')" id="tab-rewrite" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-gray-100 transition-colors">
+                        <i data-lucide="edit" class="w-5 h-5"></i>
+                        <span>AI改写</span>
+                    </button>
+                    <button onclick="showTab('publish')" id="tab-publish" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-gray-100 transition-colors">
+                        <i data-lucide="send" class="w-5 h-5"></i>
+                        <span>AI发布</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- 系统设置菜单 -->
+            <div class="p-4 border-t">
+                <h3 class="text-sm font-medium text-gray-500 mb-3">系统设置</h3>
+                <nav class="space-y-2">
+                    <button onclick="showTab('account')" id="tab-account" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left hover:bg-gray-100 transition-colors">
+                        <i data-lucide="user" class="w-5 h-5"></i>
+                        <span>账户管理</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="flex-1 flex flex-col">
+            <!-- 顶部导航栏 -->
+            <header class="bg-white border-b px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 id="page-title" class="text-xl font-semibold">AI采集</h2>
+                        <p id="page-description" class="text-sm text-gray-500">智能采集优质内容</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            登录
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 页面内容 -->
+            <main class="flex-1 p-6 overflow-auto">
+                <!-- AI采集页面 -->
+                <div id="content-collection" class="tab-content">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-medium mb-4">内容采集</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">公众号链接</label>
+                                <input type="url" placeholder="请输入公众号文章链接" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">采集平台</label>
+                                    <select class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                        <option>微信公众号</option>
+                                        <option>抖音</option>
+                                        <option>小红书</option>
+                                        <option>微博</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">内容类型</label>
+                                    <select class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                        <option>图文</option>
+                                        <option>纯文字</option>
+                                        <option>视频</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                开始采集
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 采集结果 -->
+                    <div class="mt-6 bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-medium mb-4">采集结果</h3>
+                        <div class="space-y-4">
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-start gap-3">
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iI0Y5RkFGQiIvPgo8cGF0aCBkPSJNMjAgMTBMMjUgMTVIMjBWMjVIMTVWMTVIMTBMMjAgMTBaIiBmaWxsPSIjNjM2NkYxIi8+Cjwvc3ZnPgo=" alt="示例图片" class="w-16 h-16 rounded-lg object-cover">
+                                    <div class="flex-1">
+                                        <h4 class="font-medium">示例文章标题</h4>
+                                        <p class="text-sm text-gray-600 mt-1">这是一个示例文章的摘要内容，展示了采集到的文章信息...</p>
+                                        <div class="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                                            <span>来源：微信公众号</span>
+                                            <span>时间：2024-10-15</span>
+                                            <span>字数：1200字</span>
+                                        </div>
+                                        <div class="flex gap-2 mt-3">
+                                            <button onclick="showTab('rewrite')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200 transition-colors">
+                                                AI改写
+                                            </button>
+                                            <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors">
+                                                查看原文
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI改写页面 -->
+                <div id="content-rewrite" class="tab-content hidden">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-medium mb-4">AI改写</h3>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">原始内容</label>
+                                <textarea rows="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" readonly>这是原始采集到的内容，将会被AI进行智能改写，保持核心意思的同时，调整表达方式和风格，使其更适合朋友圈发布...</textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">改写结果</label>
+                                <textarea rows="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">今天分享一个超实用的技巧！✨
+
+刚刚学到的这个方法真的太棒了，简单几步就能解决大问题。
+
+关键是操作简单，效果立竿见影！
+
+有需要的朋友可以试试看～
+
+#实用技巧 #干货分享</textarea>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex gap-3">
+                            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                重新改写
+                            </button>
+                            <button onclick="showTab('publish')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                确认发布
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI发布页面 -->
+                <div id="content-publish" class="tab-content hidden">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-medium mb-4">发布设置</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">发布内容</label>
+                                <textarea rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg">今天分享一个超实用的技巧！✨
+
+刚刚学到的这个方法真的太棒了，简单几步就能解决大问题。
+
+关键是操作简单，效果立竿见影！
+
+有需要的朋友可以试试看～
+
+#实用技巧 #干货分享</textarea>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">发布时间</label>
+                                    <select class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                        <option>立即发布</option>
+                                        <option>定时发布</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">目标微信号</label>
+                                    <select class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                        <option>主账号</option>
+                                        <option>副账号1</option>
+                                        <option>副账号2</option>
+                                        <option>全部账号</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">配图</label>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                                    <i data-lucide="image" class="w-12 h-12 text-gray-400 mx-auto mb-2"></i>
+                                    <p class="text-gray-500">点击上传图片或拖拽图片到此处</p>
+                                    <input type="file" multiple accept="image/*" class="hidden">
+                                </div>
+                            </div>
+                            <button class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors">
+                                <i data-lucide="send" class="w-5 h-5 inline mr-2"></i>
+                                发布到朋友圈
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 发布历史 -->
+                    <div class="mt-6 bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-medium mb-4">发布历史</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                <div>
+                                    <p class="font-medium">今天分享一个超实用的技巧！✨</p>
+                                    <p class="text-sm text-gray-500">发布时间：2024-10-15 14:30</p>
+                                </div>
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-sm">已发布</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                <div>
+                                    <p class="font-medium">分享一个工作小技巧</p>
+                                    <p class="text-sm text-gray-500">发布时间：2024-10-15 10:15</p>
+                                </div>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">发布中</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 账户管理页面 -->
+                <div id="content-account" class="tab-content hidden">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-medium mb-4">微信账号管理</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                        <i data-lucide="user" class="w-5 h-5 text-green-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium">主账号</p>
+                                        <p class="text-sm text-gray-500">微信号：main_account</p>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-sm">已连接</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                                        <i data-lucide="user" class="w-5 h-5 text-gray-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium">副账号1</p>
+                                        <p class="text-sm text-gray-500">微信号：sub_account_1</p>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm">未连接</span>
+                            </div>
+                        </div>
+                        <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            添加新账号
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // 初始化Lucide图标
+        lucide.createIcons();
+
+        // 页面切换功能
+        function showTab(tabName) {
+            // 隐藏所有内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // 移除所有按钮的active状态
+            document.querySelectorAll('button[id^="tab-"]').forEach(btn => {
+                btn.classList.remove('sidebar-active');
+            });
+            
+            // 显示选中的内容
+            document.getElementById('content-' + tabName).classList.remove('hidden');
+            
+            // 添加选中按钮的active状态
+            document.getElementById('tab-' + tabName).classList.add('sidebar-active');
+            
+            // 更新页面标题
+            const titles = {
+                'collection': { title: 'AI采集', desc: '智能采集优质内容' },
+                'rewrite': { title: 'AI改写', desc: 'AI智能改写内容' },
+                'publish': { title: 'AI发布', desc: '自动发布到朋友圈' },
+                'account': { title: '账户管理', desc: '管理您的账户信息' }
+            };
+            
+            if (titles[tabName]) {
+                document.getElementById('page-title').textContent = titles[tabName].title;
+                document.getElementById('page-description').textContent = titles[tabName].desc;
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

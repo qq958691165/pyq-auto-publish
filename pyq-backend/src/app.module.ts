@@ -1,0 +1,27 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule as NestConfigModule } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { WechatMonitorModule } from './wechat-monitor/wechat-monitor.module';
+import { ArticlesModule } from './articles/articles.module';
+import { SchedulerModule } from './scheduler/scheduler.module';
+import { ConfigModule } from './config/config.module';
+import { CozeModule } from './coze/coze.module';
+
+@Module({
+  imports: [
+    NestConfigModule.forRoot({
+      isGlobal: true, // 使配置在整个应用中可用
+      envFilePath: '.env',
+    }),
+    AuthModule,
+    UsersModule,
+    WechatMonitorModule,
+    ArticlesModule,
+    SchedulerModule,
+    ConfigModule,
+    CozeModule,
+  ],
+})
+export class AppModule {}
+
