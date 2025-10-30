@@ -15,13 +15,18 @@ const common_1 = require("@nestjs/common");
 const schedule_1 = require("@nestjs/schedule");
 const wechat_monitor_service_1 = require("../wechat-monitor/wechat-monitor.service");
 const config_service_1 = require("../config/config.service");
+const publish_service_1 = require("../publish/publish.service");
+const puppeteer_service_1 = require("../puppeteer/puppeteer.service");
 let SchedulerService = SchedulerService_1 = class SchedulerService {
-    constructor(wechatMonitorService, configService, schedulerRegistry) {
+    constructor(wechatMonitorService, configService, schedulerRegistry, publishService, puppeteerService) {
         this.wechatMonitorService = wechatMonitorService;
         this.configService = configService;
         this.schedulerRegistry = schedulerRegistry;
+        this.publishService = publishService;
+        this.puppeteerService = puppeteerService;
         this.logger = new common_1.Logger(SchedulerService_1.name);
         this.syncIntervalHandle = null;
+        this.isProcessingPublish = false;
         this.initializeSyncTask();
     }
     async initializeSyncTask() {
@@ -64,12 +69,53 @@ let SchedulerService = SchedulerService_1 = class SchedulerService {
         this.logger.log(`更新同步间隔为: ${intervalMinutes} 分钟`);
         await this.restartSyncTask(intervalMinutes);
     }
+    async checkPendingTasks() {
+        if (this.isProcessingPublish) {
+            this.logger.log('上一个发布任务还在处理中,跳过本次检查');
+            return;
+        }
+        try {
+            this.isProcessingPublish = true;
+            this.logger.log('开始检查待发布任务...');
+            const pendingTasks = await this.publishService.getPendingTasks();
+            if (pendingTasks.length === 0) {
+                this.logger.log('没有待发布的任务');
+                return;
+            }
+            this.logger.log(`发现 ${pendingTasks.length} 个待发布任务`);
+            for (const task of pendingTasks) {
+                try {
+                    this.logger.log(`开始处理任务: ${task.id}`);
+                    await this.puppeteerService.publishToDuixueqiu(task);
+                    this.logger.log(`任务处理成功: ${task.id}`);
+                }
+                catch (error) {
+                    this.logger.error(`任务处理失败: ${task.id}`, error);
+                }
+            }
+            this.logger.log('所有待发布任务处理完成');
+        }
+        catch (error) {
+            this.logger.error('检查待发布任务失败:', error);
+        }
+        finally {
+            this.isProcessingPublish = false;
+        }
+    }
 };
 exports.SchedulerService = SchedulerService;
+__decorate([
+    (0, schedule_1.Cron)(schedule_1.CronExpression.EVERY_MINUTE),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], SchedulerService.prototype, "checkPendingTasks", null);
 exports.SchedulerService = SchedulerService = SchedulerService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [wechat_monitor_service_1.WechatMonitorService,
         config_service_1.ConfigService,
-        schedule_1.SchedulerRegistry])
+        schedule_1.SchedulerRegistry,
+        publish_service_1.PublishService,
+        puppeteer_service_1.PuppeteerService])
 ], SchedulerService);
 //# sourceMappingURL=scheduler.service.js.map

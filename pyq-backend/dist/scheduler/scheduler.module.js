@@ -12,6 +12,8 @@ const schedule_1 = require("@nestjs/schedule");
 const scheduler_service_1 = require("./scheduler.service");
 const wechat_monitor_module_1 = require("../wechat-monitor/wechat-monitor.module");
 const config_module_1 = require("../config/config.module");
+const publish_module_1 = require("../publish/publish.module");
+const puppeteer_module_1 = require("../puppeteer/puppeteer.module");
 let SchedulerModule = class SchedulerModule {
 };
 exports.SchedulerModule = SchedulerModule;
@@ -21,6 +23,8 @@ exports.SchedulerModule = SchedulerModule = __decorate([
             schedule_1.ScheduleModule.forRoot(),
             wechat_monitor_module_1.WechatMonitorModule,
             config_module_1.ConfigModule,
+            publish_module_1.PublishModule,
+            puppeteer_module_1.PuppeteerModule,
         ],
         providers: [scheduler_service_1.SchedulerService],
         exports: [scheduler_service_1.SchedulerService],

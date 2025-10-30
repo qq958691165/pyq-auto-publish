@@ -780,26 +780,135 @@
 
                 <!-- 发布管理页面 -->
                 <div class="page" :class="{active: currentPage === 'publish'}">
+                    <!-- 创建发布任务 -->
                     <div class="card">
                         <div class="card-title">创建发布任务</div>
+
+                        <div class="form-group">
+                            <label class="form-label">任务标题</label>
+                            <input type="text" class="form-input" v-model="publishForm.taskTitle" placeholder="请输入任务标题(可选)">
+                        </div>
+
                         <div class="form-group">
                             <label class="form-label">文案内容</label>
-                            <textarea class="form-input form-textarea" v-model="publishForm.content" placeholder="请输入要发布的文案"></textarea>
+                            <textarea class="form-input form-textarea" v-model="publishForm.content" placeholder="请输入要发布的文案" rows="6"></textarea>
                         </div>
+
+                        <!-- 图片预览 -->
+                        <div class="form-group" v-if="publishForm.images && publishForm.images.length > 0">
+                            <label class="form-label">朋友圈图片 ({{ publishForm.images.length }}张)</label>
+                            <div class="image-preview" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <img v-for="(img, index) in publishForm.images" :key="index" :src="img"
+                                     style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                            </div>
+                        </div>
+
                         <div class="form-group">
                             <label class="form-label">选择微信账号</label>
                             <select class="form-input" v-model="publishForm.account">
                                 <option value="">请选择账号</option>
-                                <option value="1">微信号1</option>
-                                <option value="2">微信号2</option>
-                                <option value="3">微信号3</option>
+                                <option value="lifangde002">lifangde002 (堆雪球账号)</option>
                             </select>
                         </div>
+
                         <div class="form-group">
-                            <label class="form-label">发布时间</label>
-                            <input type="datetime-local" class="form-input" v-model="publishForm.time">
+                            <label class="form-label">发布方式</label>
+                            <div style="display: flex; gap: 20px; margin-bottom: 10px;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" v-model="publishForm.isImmediate" :value="true" style="margin-right: 8px;">
+                                    <span>立即发布</span>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" v-model="publishForm.isImmediate" :value="false" style="margin-right: 8px;">
+                                    <span>定时发布</span>
+                                </label>
+                            </div>
                         </div>
-                        <button class="btn btn-primary" @click="createPublishTask">创建任务</button>
+
+                        <div class="form-group" v-if="!publishForm.isImmediate">
+                            <label class="form-label">发布时间</label>
+                            <input type="datetime-local" class="form-input" v-model="publishForm.publishTime">
+                        </div>
+
+                        <div class="form-group" v-if="!publishForm.isImmediate">
+                            <label class="form-label">随机延迟 (分钟)</label>
+                            <input type="number" class="form-input" v-model.number="publishForm.randomDelay"
+                                   placeholder="0-60分钟" min="0" max="60">
+                            <p style="margin-top: 8px; color: #666; font-size: 12px;">
+                                设置随机延迟可以让发布时间更自然,避免被检测为机器人
+                            </p>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary" @click="createPublishTask" :disabled="publishTaskCreating">
+                                {{ publishTaskCreating ? '创建中...' : '创建任务' }}
+                            </button>
+                            <button class="btn" @click="resetPublishForm" style="background: #f0f0f0; color: #666;">
+                                重置表单
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 任务列表 -->
+                    <div class="card">
+                        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>发布任务列表</span>
+                            <button class="btn btn-primary" @click="loadPublishTasks" style="padding: 6px 12px; font-size: 14px;">
+                                刷新列表
+                            </button>
+                        </div>
+
+                        <div v-if="publishTasksLoading" style="text-align: center; padding: 40px; color: #666;">
+                            加载中...
+                        </div>
+
+                        <div v-else-if="publishTasks.length === 0" style="text-align: center; padding: 40px; color: #999;">
+                            暂无发布任务
+                        </div>
+
+                        <table class="table" v-else>
+                            <thead>
+                                <tr>
+                                    <th>任务标题</th>
+                                    <th>文案内容</th>
+                                    <th>图片</th>
+                                    <th>微信账号</th>
+                                    <th>发布时间</th>
+                                    <th>状态</th>
+                                    <th>创建时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="task in publishTasks" :key="task.id">
+                                    <td>{{ task.task_title || '无标题' }}</td>
+                                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {{ task.content }}
+                                    </td>
+                                    <td>
+                                        <span v-if="task.images && task.images.length > 0">
+                                            {{ task.images.length }}张
+                                        </span>
+                                        <span v-else style="color: #999;">无图片</span>
+                                    </td>
+                                    <td>{{ task.wechat_account || '-' }}</td>
+                                    <td>
+                                        <span v-if="task.is_immediate" style="color: #52c41a;">立即发布</span>
+                                        <span v-else>{{ formatDateTime(task.publish_time) }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="tag" :class="{
+                                            'tag-warning': task.status === 'pending',
+                                            'tag-info': task.status === 'processing',
+                                            'tag-success': task.status === 'completed',
+                                            'tag-danger': task.status === 'failed'
+                                        }">
+                                            {{ getStatusText(task.status) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ formatDateTime(task.created_at) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -933,10 +1042,17 @@
                     },
                     rewriteResult: null,
                     publishForm: {
+                        taskTitle: '',
                         content: '',
+                        images: [],
                         account: '',
-                        time: ''
+                        isImmediate: true,
+                        publishTime: '',
+                        randomDelay: 0
                     },
+                    publishTasks: [],
+                    publishTasksLoading: false,
+                    publishTaskCreating: false,
                     autoForm: {
                         url: '',
                         account: '',
@@ -1083,8 +1199,134 @@
                     // 同时设置图片
                     this.publishForm.images = this.rewriteForm.selectedImages || [];
                 },
-                createPublishTask() {
-                    alert('发布任务创建成功！');
+                async createPublishTask() {
+                    // 验证表单
+                    if (!this.publishForm.content.trim()) {
+                        alert('请输入文案内容');
+                        return;
+                    }
+                    if (!this.publishForm.account) {
+                        alert('请选择微信账号');
+                        return;
+                    }
+                    if (!this.publishForm.isImmediate && !this.publishForm.publishTime) {
+                        alert('请选择发布时间');
+                        return;
+                    }
+
+                    this.publishTaskCreating = true;
+
+                    try {
+                        const token = localStorage.getItem('token');
+                        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+                        // 准备发布时间
+                        let publishTime;
+                        if (this.publishForm.isImmediate) {
+                            publishTime = new Date().toISOString();
+                        } else {
+                            publishTime = new Date(this.publishForm.publishTime).toISOString();
+                        }
+
+                        const response = await fetch('http://localhost:3000/api/api/publish/create', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                userId: user.id,
+                                taskTitle: this.publishForm.taskTitle || '朋友圈发布任务',
+                                content: this.publishForm.content,
+                                images: this.publishForm.images,
+                                wechatAccount: this.publishForm.account,
+                                publishTime: publishTime,
+                                isImmediate: this.publishForm.isImmediate,
+                                randomDelayMinutes: this.publishForm.randomDelay || 0
+                            })
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok) {
+                            alert('发布任务创建成功！');
+                            // 重置表单
+                            this.resetPublishForm();
+                            // 刷新任务列表
+                            await this.loadPublishTasks();
+                        } else {
+                            alert('创建失败: ' + (result.message || '未知错误'));
+                        }
+                    } catch (error) {
+                        console.error('创建发布任务失败:', error);
+                        alert('创建失败: ' + error.message);
+                    } finally {
+                        this.publishTaskCreating = false;
+                    }
+                },
+                resetPublishForm() {
+                    this.publishForm = {
+                        taskTitle: '',
+                        content: '',
+                        images: [],
+                        account: '',
+                        isImmediate: true,
+                        publishTime: '',
+                        randomDelay: 0
+                    };
+                },
+                async loadPublishTasks() {
+                    this.publishTasksLoading = true;
+                    try {
+                        const token = localStorage.getItem('token');
+                        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+                        console.log('开始加载任务列表, userId:', user.id);
+
+                        const response = await fetch(`http://localhost:3000/api/api/publish/tasks?userId=${user.id}`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        console.log('API响应状态:', response.status);
+                        const result = await response.json();
+                        console.log('API响应数据:', result);
+
+                        if (response.ok) {
+                            // API返回的数据结构是 {success: true, data: {tasks: [...], total: ...}}
+                            this.publishTasks = result.data?.tasks || result.data || [];
+                            console.log('✅ 加载任务列表成功, 任务数量:', this.publishTasks.length);
+                            console.log('任务列表:', this.publishTasks);
+                        } else {
+                            console.error('❌ 加载任务列表失败:', result.message);
+                            this.publishTasks = [];
+                        }
+                    } catch (error) {
+                        console.error('❌ 加载任务列表异常:', error);
+                        this.publishTasks = [];
+                    } finally {
+                        this.publishTasksLoading = false;
+                    }
+                },
+                formatDateTime(dateString) {
+                    if (!dateString) return '-';
+                    const date = new Date(dateString);
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    return `${year}-${month}-${day} ${hours}:${minutes}`;
+                },
+                getStatusText(status) {
+                    const statusMap = {
+                        'pending': '待发布',
+                        'processing': '发布中',
+                        'completed': '已完成',
+                        'failed': '失败'
+                    };
+                    return statusMap[status] || status;
                 },
                 handleLogout() {
                     if (confirm('确定要退出登录吗?')) {
@@ -1392,6 +1634,9 @@
                 // 加载公众号监控数据
                 this.loadSubscriptions();
                 this.loadArticles();
+
+                // 加载发布任务列表
+                this.loadPublishTasks();
 
                 // 监听来自iframe的消息
                 window.addEventListener('message', this.handleMessage);

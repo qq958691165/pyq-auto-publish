@@ -7,6 +7,8 @@ import { ArticlesModule } from './articles/articles.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { ConfigModule } from './config/config.module';
 import { CozeModule } from './coze/coze.module';
+import { PublishModule } from './publish/publish.module';
+import { PuppeteerModule } from './puppeteer/puppeteer.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { CozeModule } from './coze/coze.module';
     SchedulerModule,
     ConfigModule,
     CozeModule,
+    PublishModule,
+    PuppeteerModule,
   ],
 })
 export class AppModule {}
