@@ -1193,13 +1193,63 @@ export class DuixueqiuFriendsService {
   }
 
   /**
+   * 获取好友列表(分页)
+   */
+  async getFriendsPaginated(
+    userId: string,
+    page: number = 1,
+    pageSize: number = 1000,
+  ): Promise<{ data: any[]; total: number }> {
+    try {
+      // 先获取总数
+      const { count, error: countError } = await this.supabaseService.getClient()
+        .from('duixueqiu_friends')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      if (countError) {
+        this.logger.error(`获取好友总数失败: ${countError.message}`);
+        throw countError;
+      }
+
+      const total = count || 0;
+
+      // 获取分页数据
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize - 1;
+
+      const { data, error } = await this.supabaseService.getClient()
+        .from('duixueqiu_friends')
+        .select('*')
+        .eq('user_id', userId)
+        .order('friend_name', { ascending: true })
+        .range(start, end);
+
+      if (error) {
+        this.logger.error(`获取好友列表失败: ${error.message}`);
+        throw error;
+      }
+
+      this.logger.log(`获取好友列表成功: 第${page}页, 本页${data?.length || 0}个, 总共${total}个`);
+
+      return {
+        data: data || [],
+        total,
+      };
+    } catch (error) {
+      this.logger.error(`获取好友列表失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
    * 获取好友列表(从数据库)
    * 使用分页查询避免Supabase默认1000条限制
    */
   async getFriends(userId: string): Promise<any[]> {
     let allData = [];
     let start = 0;
-    const limit = 1000;
+    const limit = 10000;
 
     while (true) {
       const { data, error } = await this.supabaseService.getClient()

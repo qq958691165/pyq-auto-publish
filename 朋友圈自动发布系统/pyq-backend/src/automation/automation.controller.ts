@@ -661,13 +661,14 @@ export class AutomationController {
   }
 
   /**
-   * 获取好友列表
+   * 获取好友列表(一次性返回所有数据)
    */
   @Get('friends')
   async getFriends(@Query('userId') userId: string) {
     this.logger.log(`获取好友列表: ${userId}`);
     try {
       const friends = await this.duixueqiuFriendsService.getFriends(userId);
+      this.logger.log(`获取好友列表成功: 共${friends.length}个好友`);
       return {
         success: true,
         data: friends,
