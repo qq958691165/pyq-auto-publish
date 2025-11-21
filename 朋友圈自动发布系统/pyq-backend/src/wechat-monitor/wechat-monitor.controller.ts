@@ -23,6 +23,7 @@ export class WechatMonitorController {
   /**
    * Webhook接口 - 接收we-mp-rss推送的文章数据
    */
+  @Public()
   @Post('webhook')
   async handleWebhook(@Body() articleData: any) {
     this.logger.log('收到we-mp-rss Webhook推送');
