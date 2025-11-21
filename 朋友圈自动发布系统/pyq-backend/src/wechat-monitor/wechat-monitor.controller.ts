@@ -32,6 +32,7 @@ export class WechatMonitorController {
   /**
    * 获取微信公众平台登录二维码
    */
+  @Public()
   @Get('qr-code')
   async getQrCode() {
     return await this.weMpRssService.getQrCode();
@@ -40,6 +41,7 @@ export class WechatMonitorController {
   /**
    * 获取二维码图片
    */
+  @Public()
   @Get('qr-image')
   async getQrImage(@Res() res: Response) {
     try {
@@ -60,6 +62,7 @@ export class WechatMonitorController {
   /**
    * 检查二维码扫描状态
    */
+  @Public()
   @Get('qr-status')
   async checkQrStatus(@Res() res: Response) {
     try {
