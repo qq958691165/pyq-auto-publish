@@ -1245,38 +1245,60 @@ export class DuixueqiuFriendsService {
   /**
    * 获取好友列表(从数据库)
    * 使用分页查询避免Supabase默认1000条限制和查询超时
+   * 优化策略: 使用大批次(5000)提高速度,依赖数据库索引而非减小批次
    */
   async getFriends(userId: string): Promise<any[]> {
     let allData = [];
     let start = 0;
-    const limit = 2000; // 降低每次查询数量,避免超时
+    const limit = 5000; // 🔧 使用大批次提高速度,依赖数据库索引优化
 
     this.logger.log(`开始获取好友列表: userId=${userId}`);
 
     while (true) {
       this.logger.log(`查询第 ${Math.floor(start / limit) + 1} 批,范围: ${start} - ${start + limit - 1}`);
 
-      const { data, error } = await this.supabaseService.getClient()
-        .from('duixueqiu_friends')
-        .select('id, user_id, friend_name, friend_remark, avatar_url, wechat_account_index, wechat_account_name, is_selected')
-        .eq('user_id', userId)
-        .order('friend_name', { ascending: true })
-        .range(start, start + limit - 1);
+      try {
+        // 🔧 只查询必要字段,减少数据传输量
+        const { data, error } = await this.supabaseService.getClient()
+          .from('duixueqiu_friends')
+          .select('id, friend_name, friend_remark, avatar_url, wechat_account_name, wechat_account_index, is_selected')
+          .eq('user_id', userId)
+          .order('friend_name', { ascending: true })
+          .range(start, start + limit - 1);
 
-      if (error) {
-        this.logger.error(`获取好友列表失败(第${Math.floor(start / limit) + 1}批): ${error.message}`);
+        if (error) {
+          this.logger.error(`获取好友列表失败(第${Math.floor(start / limit) + 1}批): ${error.message}`);
+
+          // 🔧 如果是超时错误,返回已获取的数据
+          if (error.message.includes('statement timeout')) {
+            this.logger.warn(`⚠️ 查询超时,已获取 ${allData.length} 个好友,返回部分数据`);
+            this.logger.warn(`💡 建议: 请在Supabase中执行数据库优化脚本(见 数据库脚本/fix_statement_timeout.sql)`);
+            break;
+          }
+
+          throw error;
+        }
+
+        if (!data || data.length === 0) break;
+
+        allData = allData.concat(data);
+        this.logger.log(`第 ${Math.floor(start / limit) + 1} 批查询完成,获取 ${data.length} 个好友,累计 ${allData.length} 个`);
+
+        // 如果返回的数据少于limit,说明已经是最后一页
+        if (data.length < limit) break;
+
+        start += limit;
+      } catch (error) {
+        this.logger.error(`查询第 ${Math.floor(start / limit) + 1} 批时发生错误: ${error.message}`);
+
+        // 如果已经获取了部分数据,返回已获取的数据而不是抛出错误
+        if (allData.length > 0) {
+          this.logger.warn(`⚠️ 查询中断,但已获取 ${allData.length} 个好友,返回部分数据`);
+          break;
+        }
+
         throw error;
       }
-
-      if (!data || data.length === 0) break;
-
-      allData = allData.concat(data);
-      this.logger.log(`第 ${Math.floor(start / limit) + 1} 批查询完成,获取 ${data.length} 个好友,累计 ${allData.length} 个`);
-
-      // 如果返回的数据少于limit,说明已经是最后一页
-      if (data.length < limit) break;
-
-      start += limit;
     }
 
     this.logger.log(`获取好友列表成功: 共 ${allData.length} 个好友`);

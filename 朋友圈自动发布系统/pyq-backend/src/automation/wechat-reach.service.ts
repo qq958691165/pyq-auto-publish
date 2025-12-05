@@ -1992,8 +1992,8 @@ export class WechatReachService {
       this.emitLog(`📋 素材信息: ${material.author_name} - ${material.content_desc?.substring(0, 30)}...`);
       this.emitLog(`🖼️ 素材缩略图: ${material.thumbnail_url?.substring(0, 50)}...`);
 
-      // 6. 遍历所有页,根据缩略图URL匹配素材
-      this.emitLog(`🔍 开始搜索匹配的素材(通过缩略图URL)...`);
+      // 6. 遍历所有页,根据缩略图URL或文字信息匹配素材
+      this.emitLog(`🔍 开始搜索匹配的素材(优先缩略图URL,备用作者名+描述)...`);
 
       let foundMaterial = false;
       let currentPage = 1;
@@ -2007,7 +2007,7 @@ export class WechatReachService {
           this.emitLog(`⚠️ 第${currentPage}页素材未在3秒内加载`);
         });
 
-        const matchResult = await page.evaluate((targetThumbnail) => {
+        const matchResult = await page.evaluate((targetThumbnail, targetAuthor, targetDesc) => {
           const materialCards = document.querySelectorAll('.materials-link-wrap');
 
           for (let i = 0; i < materialCards.length; i++) {
@@ -2017,28 +2017,41 @@ export class WechatReachService {
             const imgElement = card.querySelector('[class*="img-wrap"] img');
             const thumbnailUrl = imgElement?.getAttribute('src') || '';
 
-            // 匹配缩略图URL
-            if (thumbnailUrl === targetThumbnail) {
+            // 获取作者名和描述
+            const titleElement = card.querySelector('[class*="text-title"]');
+            const authorName = titleElement?.getAttribute('title') || '';
+            const descElement = card.querySelector('[class*="text-desc"]');
+            const contentDesc = descElement?.textContent?.trim() || '';
+
+            // 🆕 双重匹配: 优先缩略图URL,备用作者名+描述
+            const thumbnailMatch = thumbnailUrl === targetThumbnail;
+            const textMatch = authorName === targetAuthor && contentDesc.includes(targetDesc.substring(0, 20));
+
+            if (thumbnailMatch || textMatch) {
               const confirmIcons = document.querySelectorAll('.confirm-icon');
               if (confirmIcons[i]) {
                 (confirmIcons[i] as HTMLElement).click();
 
-                // 获取作者名和描述用于日志
-                const titleElement = card.querySelector('[class*="text-title"]');
-                const authorName = titleElement?.getAttribute('title') || '';
-                const descElement = card.querySelector('[class*="text-desc"]');
-                const contentDesc = descElement?.textContent?.trim() || '';
-
-                return { found: true, index: i, author: authorName, desc: contentDesc.substring(0, 30), thumbnail: thumbnailUrl.substring(0, 50) };
+                return {
+                  found: true,
+                  index: i,
+                  author: authorName,
+                  desc: contentDesc.substring(0, 30),
+                  thumbnail: thumbnailUrl.substring(0, 50),
+                  matchType: thumbnailMatch ? 'thumbnail' : 'text'
+                };
               }
             }
           }
           return { found: false, totalCards: materialCards.length };
-        }, material.thumbnail_url);
+        }, material.thumbnail_url, material.author_name, material.content_desc || '');
 
         if (matchResult.found) {
           this.emitLog(`✅ 找到匹配的素材: ${matchResult.author} - ${matchResult.desc}...`);
-          this.emitLog(`🖼️ 缩略图匹配: ${matchResult.thumbnail}...`);
+          this.emitLog(`🔍 匹配方式: ${matchResult.matchType === 'thumbnail' ? '缩略图URL' : '作者名+描述'}`);
+          if (matchResult.matchType === 'thumbnail') {
+            this.emitLog(`🖼️ 缩略图匹配: ${matchResult.thumbnail}...`);
+          }
           foundMaterial = true;
           break;
         } else {
@@ -2072,7 +2085,7 @@ export class WechatReachService {
       }
 
       if (!foundMaterial) {
-        throw new Error(`未找到匹配的素材(缩略图URL): ${material.thumbnail_url?.substring(0, 50)}...`);
+        throw new Error(`未找到匹配的素材(已尝试缩略图URL和作者名+描述双重匹配): ${material.author_name} - ${material.content_desc?.substring(0, 30)}...`);
       }
 
       this.emitLog(`✅ 已点击匹配的素材对号图标`);
@@ -2097,15 +2110,20 @@ export class WechatReachService {
         this.emitLog(`✅ 已点击确定按钮`);
       }
 
-      // ✅ 智能等待: 等待对话框消失(最多3秒)
+      // ✅ 智能等待: 等待对话框消失(最多5秒)
+      this.emitLog(`⏳ 等待素材对话框消失...`);
       await page.waitForFunction(() => {
         const dialogs = document.querySelectorAll('.el-dialog__wrapper');
         return dialogs.length === 0 || Array.from(dialogs).every(d =>
           (d as HTMLElement).style.display === 'none'
         );
-      }, { timeout: 3000 }).catch(() => {
-        this.emitLog(`⚠️ 对话框未在3秒内消失,继续执行`);
+      }, { timeout: 5000 }).catch(() => {
+        this.emitLog(`⚠️ 对话框未在5秒内消失,继续执行`);
       });
+
+      // ✅ 等待素材发送完成(额外等待2秒确保发送成功)
+      this.emitLog(`⏳ 等待素材发送完成...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       this.emitLog(`✅ 视频号素材已发送`);
       return true;
@@ -2456,8 +2474,8 @@ export class WechatReachService {
 
       this.emitLog(`📋 素材信息: ${material.title?.substring(0, 50)}...`);
 
-      // 6. 遍历所有页,根据标题和公众号名称匹配素材
-      this.emitLog(`🔍 开始搜索匹配的链接素材...`);
+      // 6. 遍历所有页,根据标题和公众号名称匹配素材(支持模糊匹配)
+      this.emitLog(`🔍 开始搜索匹配的链接素材(优先精确匹配,备用模糊匹配)...`);
 
       let foundMaterial = false;
       let currentPage = 1;
@@ -2477,11 +2495,21 @@ export class WechatReachService {
             const accountElement = card.querySelector('[class*="text-desc"]');
             const accountName = accountElement?.textContent?.trim() || '';
 
-            if (title === targetTitle && accountName === targetAccount) {
+            // 🆕 双重匹配: 优先精确匹配,备用模糊匹配(标题前30字符+公众号名称)
+            const exactMatch = title === targetTitle && accountName === targetAccount;
+            const fuzzyMatch = title.substring(0, 30) === targetTitle.substring(0, 30) && accountName === targetAccount;
+
+            if (exactMatch || fuzzyMatch) {
               const confirmIcons = document.querySelectorAll('.confirm-icon');
               if (confirmIcons[i]) {
                 (confirmIcons[i] as HTMLElement).click();
-                return { found: true, index: i, title: title.substring(0, 30), account: accountName };
+                return {
+                  found: true,
+                  index: i,
+                  title: title.substring(0, 30),
+                  account: accountName,
+                  matchType: exactMatch ? 'exact' : 'fuzzy'
+                };
               }
             }
           }
@@ -2490,6 +2518,7 @@ export class WechatReachService {
 
         if (matchResult.found) {
           this.emitLog(`✅ 找到匹配的链接素材: ${matchResult.title}... (${matchResult.account})`);
+          this.emitLog(`🔍 匹配方式: ${matchResult.matchType === 'exact' ? '精确匹配' : '模糊匹配(前30字符)'}`);
           foundMaterial = true;
           break;
         } else {
@@ -2769,7 +2798,8 @@ export class WechatReachService {
       materialId?: number;
       imageUrls?: string[];
     }>,
-    userId: string
+    userId: string,
+    randomDelay?: { enabled: boolean; minDelay?: number; maxDelay?: number } // 🆕 添加随机延迟参数
   ): Promise<boolean> {
     try {
       // 🐛 调试日志:打印接收到的参数
@@ -2830,6 +2860,15 @@ export class WechatReachService {
           this.emitLog(`⏭️ 跳过${content.type}消息 (已发送过)`);
           successCount++; // 已发送的也算成功
           continue;
+        }
+
+        // 🆕 随机延迟(在每条消息发送前)
+        if (i > 0 && randomDelay?.enabled) {
+          const minDelay = randomDelay.minDelay || 3;
+          const maxDelay = randomDelay.maxDelay || 10;
+          const delay = minDelay + Math.random() * (maxDelay - minDelay);
+          this.emitLog(`⏳ 随机延迟: ${delay.toFixed(1)} 秒...`);
+          await new Promise(resolve => setTimeout(resolve, delay * 1000));
         }
 
         // 发送该类型的消息
@@ -3473,10 +3512,16 @@ export class WechatReachService {
     taskId: string,
     forbiddenTimeRanges?: Array<{startTime: string, endTime: string}>,
     selectedWechatAccountIndexes?: number[],
-    selectedFriendIds?: string[] // 新增: 选中的好友ID列表
+    selectedFriendIds?: string[], // 选中的好友ID列表
+    randomDelay?: { enabled: boolean; minDelay?: number; maxDelay?: number } // 🆕 随机延迟配置
   ): Promise<void> {
     // 🐛 调试:通过WebSocket发送userId到前端
     this.emitLog(`🐛 DEBUG: userId=${userId}, 类型=${typeof userId}`);
+
+    // 🆕 记录随机延迟配置
+    if (randomDelay?.enabled) {
+      this.emitLog(`⏱️ 随机延迟已启用: ${randomDelay.minDelay || 3}-${randomDelay.maxDelay || 10}秒`);
+    }
 
     if (this.isRunning) {
       throw new Error('已有任务正在运行中');
@@ -3780,8 +3825,8 @@ export class WechatReachService {
           // 🐛 调试日志:打印调用sendCombinedContents的参数
           this.logger.log(`🐛 调用sendCombinedContents: friendName=${friendName}, friendId=${friend.id}, userId=${userId}`);
 
-          // 🆕 组合发送(传递friendId参数)
-          const success = await this.sendCombinedContents(page, friendName, friend.id, contents, userId);
+          // 🆕 组合发送(传递friendId参数和randomDelay参数)
+          const success = await this.sendCombinedContents(page, friendName, friend.id, contents, userId, randomDelay);
 
           if (success) {
             // 🆕 不再记录combined类型的历史,因为每种类型已经在sendCombinedContents中记录了

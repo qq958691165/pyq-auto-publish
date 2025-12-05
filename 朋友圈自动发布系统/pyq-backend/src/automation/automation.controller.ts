@@ -1,10 +1,11 @@
-import { Controller, Post, Body, Logger, Sse, MessageEvent, Query, Get, Put, Param } from '@nestjs/common';
+import { Controller, Post, Body, Logger, Sse, MessageEvent, Query, Get, Put, Param, Inject } from '@nestjs/common';
 import { AutomationService } from './automation.service';
 import { FollowCircleService } from './follow-circle.service';
 import { WechatReachService } from './wechat-reach.service';
 import { VideoMaterialService } from './video-material.service';
 import { LinkMaterialService } from './link-material.service';
 import { DuixueqiuFriendsService } from './duixueqiu-friends.service';
+import { SchedulerService } from '../scheduler/scheduler.service';
 import { Observable } from 'rxjs';
 
 @Controller('automation')
@@ -18,6 +19,7 @@ export class AutomationController {
     private readonly videoMaterialService: VideoMaterialService,
     private readonly linkMaterialService: LinkMaterialService,
     private readonly duixueqiuFriendsService: DuixueqiuFriendsService,
+    @Inject(SchedulerService) private readonly schedulerService: SchedulerService,
   ) {}
 
   /**
@@ -334,6 +336,7 @@ export class AutomationController {
       forbiddenTimeRanges?: Array<{startTime: string, endTime: string}>;
       selectedWechatAccountIndexes?: number[];
       selectedFriendIds?: string[]; // 新增: 选中的好友ID列表
+      randomDelay?: { enabled: boolean; minDelay?: number; maxDelay?: number }; // 🆕 随机延迟配置
     },
   ) {
     this.logger.log(`收到脚本2请求: 微信好友触达（组合发送）`);
@@ -365,7 +368,8 @@ export class AutomationController {
         taskId,
         body.forbiddenTimeRanges,
         body.selectedWechatAccountIndexes,
-        body.selectedFriendIds // 传递选中的好友ID列表
+        body.selectedFriendIds, // 传递选中的好友ID列表
+        body.randomDelay // 🆕 传递随机延迟配置
       ).catch(error => {
         this.logger.error(`脚本2（组合发送）执行失败: ${error.message}`, error.stack);
       });
@@ -864,6 +868,28 @@ export class AutomationController {
       return {
         success: false,
         message: error.message || '启动失败',
+      };
+    }
+  }
+
+  /**
+   * 🆕 手动触发好友自动同步(测试用)
+   */
+  @Post('friends/trigger-auto-sync')
+  async triggerAutoSyncFriends() {
+    this.logger.log('收到手动触发好友自动同步请求');
+    try {
+      // 直接调用SchedulerService的autoSyncFriends方法
+      await this.schedulerService.autoSyncFriends();
+      return {
+        success: true,
+        message: '好友自动同步已触发',
+      };
+    } catch (error) {
+      this.logger.error(`触发好友自动同步失败: ${error.message}`, error.stack);
+      return {
+        success: false,
+        message: error.message || '触发失败',
       };
     }
   }

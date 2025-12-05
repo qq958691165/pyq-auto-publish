@@ -6,6 +6,7 @@ import { ConfigModule } from '../config/config.module';
 import { PublishModule } from '../publish/publish.module';
 import { PuppeteerModule } from '../puppeteer/puppeteer.module';
 import { StorageModule } from '../storage/storage.module';
+import { AutomationModule } from '../automation/automation.module';
 import { Pool } from 'pg';
 
 /**
@@ -19,6 +20,7 @@ import { Pool } from 'pg';
     PublishModule,
     PuppeteerModule,
     StorageModule,
+    AutomationModule,
   ],
   providers: [
     SchedulerService,

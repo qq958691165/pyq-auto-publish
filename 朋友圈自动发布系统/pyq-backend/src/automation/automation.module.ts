@@ -14,6 +14,7 @@ import { PublishModule } from '../publish/publish.module';
 import { ArticlesModule } from '../articles/articles.module';
 import { PuppeteerModule } from '../puppeteer/puppeteer.module';
 import { StorageModule } from '../storage/storage.module'; // 🆕 导入StorageModule
+import { SchedulerModule } from '../scheduler/scheduler.module'; // 🆕 导入SchedulerModule
 import { Pool } from 'pg';
 
 @Module({
@@ -24,6 +25,7 @@ import { Pool } from 'pg';
     ArticlesModule,
     forwardRef(() => PuppeteerModule), // 使用forwardRef避免循环依赖
     StorageModule, // 🆕 添加StorageModule
+    forwardRef(() => SchedulerModule), // 🆕 添加SchedulerModule (使用forwardRef避免循环依赖)
   ],
   controllers: [AutomationController],
   providers: [

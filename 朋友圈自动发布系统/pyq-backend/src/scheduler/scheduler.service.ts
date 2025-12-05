@@ -6,6 +6,7 @@ import { PublishService } from '../publish/publish.service';
 import { PuppeteerService } from '../puppeteer/puppeteer.service';
 import { StorageService } from '../storage/storage.service';
 import { SupabaseService } from '../common/supabase.service';
+import { DuixueqiuFriendsService } from '../automation/duixueqiu-friends.service';
 import { Pool } from 'pg';
 
 /**
@@ -28,6 +29,7 @@ export class SchedulerService implements OnModuleInit {
     private readonly puppeteerService: PuppeteerService,
     private readonly storageService: StorageService,
     private readonly supabaseService: SupabaseService,
+    private readonly duixueqiuFriendsService: DuixueqiuFriendsService,
     @Inject('DATABASE_POOL') private readonly pool: Pool,
   ) {}
 
@@ -383,6 +385,63 @@ export class SchedulerService implements OnModuleInit {
       this.logger.error('❌ 检查删除任务失败:', error);
     } finally {
       this.isProcessingDelete = false;
+    }
+  }
+
+  /**
+   * 每天凌晨2点自动同步所有用户的好友列表
+   */
+  @Cron('0 2 * * *')
+  async autoSyncFriends() {
+    try {
+      this.logger.log('🔄 开始自动同步好友列表...');
+
+      // 获取所有有堆雪球账号的用户
+      const { data: accounts, error } = await this.supabaseService.getClient()
+        .from('duixueqiu_accounts')
+        .select('user_id')
+        .eq('is_active', true);
+
+      if (error) {
+        this.logger.error(`查询堆雪球账号失败: ${error.message}`);
+        throw error;
+      }
+
+      if (!accounts || accounts.length === 0) {
+        this.logger.log('✅ 没有需要同步的用户');
+        return;
+      }
+
+      // 去重用户ID
+      const uniqueUserIds = [...new Set(accounts.map(acc => acc.user_id))];
+      this.logger.log(`📋 发现 ${uniqueUserIds.length} 个用户需要同步好友`);
+
+      // 逐个用户同步
+      for (const userId of uniqueUserIds) {
+        try {
+          this.logger.log(`👤 开始同步用户 ${userId} 的好友列表...`);
+          const result = await this.duixueqiuFriendsService.syncFriends(userId);
+
+          if (result.success) {
+            this.logger.log(`✅ 用户 ${userId} 同步成功: ${result.message}`);
+          } else {
+            this.logger.error(`❌ 用户 ${userId} 同步失败: ${result.message}`);
+          }
+
+          // 每个用户之间间隔5分钟,避免频繁操作
+          if (uniqueUserIds.indexOf(userId) < uniqueUserIds.length - 1) {
+            this.logger.log('⏳ 等待5分钟后同步下一个用户...');
+            await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+          }
+        } catch (error) {
+          this.logger.error(`❌ 用户 ${userId} 同步失败:`, error);
+          // 继续处理下一个用户
+        }
+      }
+
+      this.logger.log('🎉 所有用户好友列表自动同步完成');
+    } catch (error) {
+      this.logger.error('❌ 自动同步好友列表失败:', error);
     }
   }
 }
